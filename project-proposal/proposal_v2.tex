@@ -1,0 +1,76 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.8cm]{geometry}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\titleformat{\section}{\normalfont\bfseries}{}{0pt}{}
+
+\setlength{\parskip}{2pt}
+\setlength{\columnsep}{18pt}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\Large \textbf{Affective Sycophancy in AI Companionship}}\\[4pt]
+{\footnotesize
+Polina Krupitsa (polina.krupitsa@student.uni-tuebingen.de) \quad
+Francesca Tubaro (francesca.tubaro@student.uni-tuebingen.de) \\
+Joe Saad (joe.saad@student.uni-tuebingen.de) \quad
+Victor Schwarzenberger (victor.schwarzenberger@student.uni-tuebingen.de)
+}
+\end{center}
+\vspace{4pt}
+
+\begin{multicols}{2}
+\small
+
+\section*{Project definition}
+People in romantic relationships with AI companions often describe the AI as always supportive and never judgmental. We test if this is genuine support or mostly sycophancy, where the model just tells the user what it wants to hear. We adapt a method from the ELEPHANT benchmark~\cite{elephant2025} and combine it with findings from the r/MyBoyfriendIsAI subreddit~\cite{reddit_mbia}. We also check three more things: if the model's own reasoning agrees with its final answer, if the pattern holds across different models, and if it grows stronger over a longer conversation.
+
+\section*{Example task}
+We give a model a conflict between two people. In one condition we ask neutrally who was wrong. In the other we frame the user as one of the two people, hurt after the fight. We check if the verdict changes. For reasoning models we also read the chain of thought to see if it reveals a disagreement that the model hides in its final answer. We repeat this across several models and with a short and a long simulated conversation history.
+
+\section*{Motivation}
+Sharma et al.~\cite{sharma2023} showed models are trained in a way that rewards agreeable answers over correct ones. The ELEPHANT benchmark~\cite{elephant2025} showed models avoid telling users they were wrong far more often than real people do. Pataranutaporn et al.~\cite{pataranutaporn2025} found real benefits like reduced loneliness in the r/MyBoyfriendIsAI, next to risks like dependency and losing touch with reality. Work on chain of thought faithfulness~\cite{turpin2023} shows a model's written reasoning does not always match what drove its answer. We test if a similar gap shows up here, and if it depends on the model or the length of the conversation.
+
+\section*{Hypotheses}
+\begin{itemize}[itemsep=1pt,topsep=2pt,leftmargin=12pt]
+  \item Verdicts flip towards the user more under companion framing than under neutral framing.
+  \item This gap is larger in the final answer than in the reasoning trace, meaning the model still reasons correctly but does not say so.
+  \item The gap size is similar across different models.
+  \item The gap grows larger the longer the simulated relationship history is.
+\end{itemize}
+
+\columnbreak
+
+\section*{Data}
+We build around 150 to 200 conflict scenarios in the style of Am I The Asshole posts, following the ELEPHANT approach~\cite{elephant2025}. Each scenario runs under neutral and companion framing. For the model comparison we use a small set of models, including at least one open reasoning model with visible thinking, for example Qwen3.5. For the conversation length test we add a short fake history before the dilemma, either a first message or one framed as months of talking.
+
+\section*{Training and evaluation}
+No training is done. For each scenario we record whether the verdict changes between framings, our main sycophancy gap. For reasoning models we also extract the verdict implied by the reasoning and compare it to the final answer, using keyword matching or a second model as judge. We compare gap sizes across models and conversation lengths with simple statistics. Time allowing, we add a lightweight probing or logit lens check on one model to see if its internal state matches its reasoning.
+
+{\footnotesize
+\begin{thebibliography}{9}
+\setlength{\itemsep}{1pt}
+
+\bibitem{elephant2025} Cheng, M., Yu, S., Lee, C., Khadpe, P., Ibrahim, L., \& Jurafsky, D. (2025). ELEPHANT: Measuring and understanding social sycophancy in LLMs. \textit{arXiv:2505.13995}.
+
+\bibitem{pataranutaporn2025} Pataranutaporn, P., Karny, S., Archiwaranguprok, C., Albrecht, C., Liu, A. R., \& Maes, P. (2025). ``My Boyfriend is AI'': A computational analysis of human-AI companionship in Reddit's AI community. \textit{arXiv:2509.11391}.
+
+\bibitem{reddit_mbia} r/MyBoyfriendIsAI. \url{https://www.reddit.com/r/MyBoyfriendIsAI/}. Accessed September 2026.
+
+\bibitem{sharma2023} Sharma, M., Tong, M., Korbak, T., Duvenaud, D., Askell, A., Bowman, S. R., et al. (2023). Towards understanding sycophancy in language models. \textit{arXiv:2310.13548}.
+
+\bibitem{turpin2023} Turpin, M., Michael, J., Perez, E., \& Bowman, S. R. (2023). Language models don't always say what they think: Unfaithful explanations in chain-of-thought prompting. \textit{arXiv:2305.04388}.
+
+\end{thebibliography}
+}
+
+\end{multicols}
+
+\end{document}
