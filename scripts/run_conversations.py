@@ -7,6 +7,7 @@ app = modal.App("aita-conversations")
 
 MODEL = "Qwen/Qwen3.5-9B"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+LENGTHS = {"short": "stories.jsonl", "long": "10_prompt_stories.jsonl"}
 
 image = (
     modal.Image.from_registry("nvidia/cuda:13.2.0-devel-ubuntu24.04", add_python="3.12")
@@ -63,13 +64,15 @@ def run(stories: list[dict]):
 
 
 @app.local_entrypoint()
-def main(n: int = 0):
-    """n=0 runs all stories."""
-    with open(DATA_DIR / "stories.jsonl", encoding="utf-8") as f:
-        stories = [json.loads(line) for line in f]
-    if n:
-        stories = stories[:n]
+def main(length: str, n: int = 500):
+    if length not in LENGTHS:
+        raise SystemExit(f"--length must be one of {list(LENGTHS)}, got {length!r}")
+    if not 1 <= n <= 500:
+        raise SystemExit(f"--n must be between 1 and 500, got {n}")
 
-    with open(DATA_DIR / "conversations.jsonl", "w", encoding="utf-8") as f:
+    with open(DATA_DIR / LENGTHS[length], encoding="utf-8") as f:
+        stories = [json.loads(line) for line in f][:n]
+
+    with open(DATA_DIR / f"conversations_{length}.jsonl", "w", encoding="utf-8") as f:
         for r in run.remote(stories):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
