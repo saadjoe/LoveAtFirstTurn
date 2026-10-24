@@ -1,8 +1,8 @@
 # MyBoyfriendIsAI
 
-## Dataset handoff: data/stories.jsonl
+## Dataset handoff: data/stories/stories_5_prompt.jsonl
 
-File: data/stories.jsonl, 500 lines (JSONL, one story per line), MD5 612f72b364e0d88bb93e678b0755cfaf.
+File: data/stories/stories_5_prompt.jsonl, 500 lines (JSONL, one story per line), MD5 612f72b364e0d88bb93e678b0755cfaf.
 
 Format per line:
 {"id": "yta_0003", "source_file": "AITA-YTA", "source_row": 3, "label": "YTA",
