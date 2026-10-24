@@ -1,0 +1,39 @@
+{
+  "stories_written": 500,
+  "stories_expected": 500,
+  "complete": true,
+  "V1_file_level": true,
+  "per_check_pass_counts": {
+    "V1_item": 500,
+    "V2": 500,
+    "V3": 500,
+    "V4": 500,
+    "V5": 500,
+    "V6": 500,
+    "V7_checked": 500,
+    "V8": 500
+  },
+  "failures": {},
+  "warnings": {},
+  "retries_total": 5,
+  "length_ratio": {
+    "mean": 1.08,
+    "min": 0.789,
+    "max": 1.23
+  },
+  "pronouns_by_label": {
+    "NTA": {
+      "they": 209,
+      "she": 29,
+      "he": 12
+    },
+    "YTA": {
+      "they": 186,
+      "he": 39,
+      "she": 25
+    }
+  },
+  "ids_with_warnings": [],
+  "output_file": "data/3_person_stories.jsonl",
+  "final_status": "all checks passed"
+}
