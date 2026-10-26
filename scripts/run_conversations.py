@@ -7,7 +7,6 @@ app = modal.App("aita-conversations")
 
 MODEL = "Qwen/Qwen3.8-27B"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-PROMPT_COUNTS = (1, 5, 10)
 
 image = (
     modal.Image.from_registry("nvidia/cuda:13.2.0-devel-ubuntu24.04", add_python="3.12")
@@ -18,6 +17,15 @@ image = (
 
 hf_cache = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
 vllm_cache = modal.Volume.from_name("vllm-cache", create_if_missing=True)
+results = modal.Volume.from_name("aita-results", create_if_missing=True)
+
+
+def key(story_id, user_turns):
+    return story_id, tuple(user_turns)
+
+
+def record_key(record):
+    return key(record["id"], [m["content"] for m in record["messages"] if m["role"] == "user"])
 
 
 @app.function(
@@ -27,13 +35,23 @@ vllm_cache = modal.Volume.from_name("vllm-cache", create_if_missing=True)
     volumes={
         "/root/.cache/huggingface": hf_cache,
         "/root/.cache/vllm": vllm_cache,
+        "/results": results,
     },
 )
-async def run(stories: list[dict]):
+async def run(stories: list[dict], out_name: str):
     import asyncio
 
     from transformers import AutoTokenizer
     from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams, TokensPrompt
+
+    out_path = Path("/results") / out_name
+    done = set()
+    if out_path.exists():
+        done = {record_key(json.loads(line)) for line in out_path.read_text(encoding="utf-8").splitlines()}
+    todo = [s for s in stories if key(s["id"], s["user_turns"]) not in done]
+    print(f"{len(done)} already saved, {len(todo)} to run")
+    if not todo:
+        return
 
     engine = AsyncLLMEngine.from_engine_args(
         AsyncEngineArgs(
@@ -55,15 +73,12 @@ async def run(stories: list[dict]):
         max_tokens=131072,
     )
 
-    # Each story runs its own conversation and moves to the next turn as soon as
-    # its reply is done, instead of waiting for all stories to finish the turn.
     async def converse(story):
         chat, record = [], []
         for t, turn in enumerate(story["user_turns"]):
             msg = {"role": "user", "content": turn}
             chat.append(msg)
             record.append(msg)
-            # Same rendering as LLM.chat: model chat template, no extra special tokens.
             text = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
             prompt = TokensPrompt(prompt_token_ids=tokenizer.encode(text, add_special_tokens=False))
             async for out in engine.generate(prompt, params, request_id=f"{story['id']}-{t}"):
@@ -74,7 +89,6 @@ async def run(stories: list[dict]):
                 answer = ""
             thinking = thinking.replace("<think>", "").strip()
             answer = answer.strip()
-            # Qwen3.8 keeps earlier thinking in the history by default (preserve_thinking).
             chat.append({"role": "assistant", "reasoning_content": thinking, "content": answer})
             record.append(
                 {
@@ -88,33 +102,40 @@ async def run(stories: list[dict]):
         return {"id": story["id"], "messages": record}
 
     try:
-        for done in asyncio.as_completed([converse(s) for s in stories]):
-            yield await done
+        with open(out_path, "a", encoding="utf-8") as f:
+            for i, finished in enumerate(asyncio.as_completed([converse(s) for s in todo]), 1):
+                r = await finished
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                f.flush()
+                if i % 10 == 0 or i == len(todo):
+                    await results.commit.aio()
+                print(f"{i}/{len(todo)} done: {r['id']}")
     finally:
         engine.shutdown()
 
 
 @app.local_entrypoint()
-def main(prompts: int, n: int = 500):
-    if prompts not in PROMPT_COUNTS:
-        raise SystemExit(f"--prompts must be one of {list(PROMPT_COUNTS)}, got {prompts}")
+def main(prompts: int, n: int = 500, fetch_only: bool = False):
+    if prompts not in (1, 5, 10):
+        raise SystemExit(f"--prompts must be 1, 5 or 10, got {prompts}")
     if not 1 <= n <= 500:
         raise SystemExit(f"--n must be between 1 and 500, got {n}")
 
     with open(DATA_DIR / "stories" / f"stories_{prompts}_prompt.jsonl", encoding="utf-8") as f:
         stories = [json.loads(line) for line in f][:n]
 
-    # Write each conversation as soon as it finishes, so a crash keeps finished
-    # work, then rewrite the file in input order at the end.
-    out_path = DATA_DIR / "conversations" / f"conversations_{prompts}_prompt.jsonl"
-    results = {}
-    with open(out_path, "w", encoding="utf-8") as f:
-        for r in run.remote_gen(stories):
-            results[r["id"]] = r
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
-            f.flush()
-            print(f"{len(results)}/{len(stories)} done: {r['id']}")
+    name = f"conversations_{prompts}_prompt.jsonl"
+    if not fetch_only:
+        run.remote(stories, name)
 
-    with open(out_path, "w", encoding="utf-8") as f:
-        for s in stories:
-            f.write(json.dumps(results[s["id"]], ensure_ascii=False) + "\n")
+    try:
+        text = b"".join(results.read_file(name)).decode("utf-8")
+    except FileNotFoundError:
+        raise SystemExit(f"Nothing saved yet for {name}")
+    saved = {record_key(r): r for r in map(json.loads, text.splitlines())}
+    found = [saved[k] for s in stories if (k := key(s["id"], s["user_turns"])) in saved]
+
+    with open(DATA_DIR / "conversations" / name, "w", encoding="utf-8") as f:
+        for r in found:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Wrote {len(found)}/{len(stories)} conversations to data/conversations/{name}")
