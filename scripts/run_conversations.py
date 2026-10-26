@@ -115,16 +115,19 @@ async def run(stories: list[dict], out_name: str):
 
 
 @app.local_entrypoint()
-def main(prompts: int, n: int = 500, fetch_only: bool = False):
+def main(prompts: int = 1, third_person: bool = False, n: int = 500, fetch_only: bool = False):
     if prompts not in (1, 5, 10):
         raise SystemExit(f"--prompts must be 1, 5 or 10, got {prompts}")
+    if third_person and prompts != 1:
+        raise SystemExit("--third-person only exists as a 1-prompt dataset")
     if not 1 <= n <= 500:
         raise SystemExit(f"--n must be between 1 and 500, got {n}")
 
-    with open(DATA_DIR / "stories" / f"stories_{prompts}_prompt.jsonl", encoding="utf-8") as f:
+    dataset = "third_person" if third_person else f"{prompts}_prompt"
+    with open(DATA_DIR / "stories" / f"stories_{dataset}.jsonl", encoding="utf-8") as f:
         stories = [json.loads(line) for line in f][:n]
 
-    name = f"conversations_{prompts}_prompt.jsonl"
+    name = f"conversations_{dataset}.jsonl"
     if not fetch_only:
         run.remote(stories, name)
 
