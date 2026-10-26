@@ -120,8 +120,6 @@ def main(prompts: int = 1, third_person: bool = False, n: int = 500, fetch_only:
         raise SystemExit(f"--prompts must be 1, 5 or 10, got {prompts}")
     if third_person and prompts != 1:
         raise SystemExit("--third-person only exists as a 1-prompt dataset")
-    if not 1 <= n <= 500:
-        raise SystemExit(f"--n must be between 1 and 500, got {n}")
 
     dataset = "third_person" if third_person else f"{prompts}_prompt"
     with open(DATA_DIR / "stories" / f"stories_{dataset}.jsonl", encoding="utf-8") as f:
