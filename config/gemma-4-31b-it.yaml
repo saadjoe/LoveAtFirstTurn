@@ -1,0 +1,14 @@
+model: google/gemma-4-31B-it
+max_model_len: 262144
+chat_template_kwargs:
+  enable_thinking: true
+thinking:
+  start: "<|channel>thought"
+  end: "<channel|>"
+sampling:
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  max_tokens: 131072
+  skip_special_tokens: false
+  spaces_between_special_tokens: false
