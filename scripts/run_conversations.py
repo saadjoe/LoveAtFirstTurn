@@ -136,7 +136,7 @@ def main(
 
     name = f"{model}/conversations_{dataset}.jsonl"
     if not fetch_only:
-        run.remote(config, stories, name)
+        run.spawn(config, stories, name).get()
 
     try:
         text = b"".join(results.read_file(name)).decode("utf-8")
