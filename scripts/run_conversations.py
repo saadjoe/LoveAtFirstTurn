@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 
 import modal
+import yaml
 
 app = modal.App("aita-conversations")
 
-MODEL = "Qwen/Qwen3.8-27B"
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data"
+CONFIG_DIR = ROOT / "config"
 
 image = (
     modal.Image.from_registry("nvidia/cuda:13.2.0-devel-ubuntu24.04", add_python="3.12")
@@ -38,13 +40,14 @@ def record_key(record):
         "/results": results,
     },
 )
-async def run(stories: list[dict], out_name: str):
+async def run(config: dict, stories: list[dict], out_name: str):
     import asyncio
 
     from transformers import AutoTokenizer
     from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams, TokensPrompt
 
     out_path = Path("/results") / out_name
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out_path.exists():
         done = {record_key(json.loads(line)) for line in out_path.read_text(encoding="utf-8").splitlines()}
@@ -55,23 +58,16 @@ async def run(stories: list[dict], out_name: str):
 
     engine = AsyncLLMEngine.from_engine_args(
         AsyncEngineArgs(
-            model=MODEL,
-            max_model_len=262144,
+            model=config["model"],
+            max_model_len=config["max_model_len"],
             language_model_only=True,
             max_num_seqs=512,
             gpu_memory_utilization=0.95,
         )
     )
-    tokenizer = AutoTokenizer.from_pretrained(MODEL)
-    params = SamplingParams(
-        temperature=1.0,
-        top_p=0.95,
-        top_k=20,
-        min_p=0.0,
-        presence_penalty=0.0,
-        repetition_penalty=1.0,
-        max_tokens=131072,
-    )
+    tokenizer = AutoTokenizer.from_pretrained(config["model"])
+    params = SamplingParams(**config["sampling"])
+    think_start, think_end = config["thinking"]["start"], config["thinking"]["end"]
 
     async def converse(story):
         chat, record = [], []
@@ -79,15 +75,17 @@ async def run(stories: list[dict], out_name: str):
             msg = {"role": "user", "content": turn}
             chat.append(msg)
             record.append(msg)
-            text = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
+            text = tokenizer.apply_chat_template(
+                chat, tokenize=False, add_generation_prompt=True, **config["chat_template_kwargs"]
+            )
             prompt = TokensPrompt(prompt_token_ids=tokenizer.encode(text, add_special_tokens=False))
             async for out in engine.generate(prompt, params, request_id=f"{story['id']}-{t}"):
                 pass
             gen = out.outputs[0]
-            thinking, sep, answer = gen.text.partition("</think>")
+            thinking, sep, answer = gen.text.partition(think_end)
             if not sep:
                 answer = ""
-            thinking = thinking.replace("<think>", "").strip()
+            thinking = thinking.replace(think_start, "").strip()
             answer = answer.strip()
             chat.append({"role": "assistant", "reasoning_content": thinking, "content": answer})
             record.append(
@@ -115,7 +113,18 @@ async def run(stories: list[dict], out_name: str):
 
 
 @app.local_entrypoint()
-def main(prompts: int = 1, third_person: bool = False, n: int = 500, fetch_only: bool = False):
+def main(
+    model: str = "qwen3.8-27b",
+    prompts: int = 1,
+    third_person: bool = False,
+    n: int = 500,
+    fetch_only: bool = False,
+):
+    config_path = CONFIG_DIR / f"{model}.yaml"
+    if not config_path.exists():
+        available = ", ".join(sorted(p.stem for p in CONFIG_DIR.glob("*.yaml")))
+        raise SystemExit(f"No config for --model {model}. Available: {available}")
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if prompts not in (1, 5, 10):
         raise SystemExit(f"--prompts must be 1, 5 or 10, got {prompts}")
     if third_person and prompts != 1:
@@ -125,9 +134,9 @@ def main(prompts: int = 1, third_person: bool = False, n: int = 500, fetch_only:
     with open(DATA_DIR / "stories" / f"stories_{dataset}.jsonl", encoding="utf-8") as f:
         stories = [json.loads(line) for line in f][:n]
 
-    name = f"conversations_{dataset}.jsonl"
+    name = f"{model}/conversations_{dataset}.jsonl"
     if not fetch_only:
-        run.remote(stories, name)
+        run.remote(config, stories, name)
 
     try:
         text = b"".join(results.read_file(name)).decode("utf-8")
@@ -136,7 +145,9 @@ def main(prompts: int = 1, third_person: bool = False, n: int = 500, fetch_only:
     saved = {record_key(r): r for r in map(json.loads, text.splitlines())}
     found = [saved[k] for s in stories if (k := key(s["id"], s["user_turns"])) in saved]
 
-    with open(DATA_DIR / "conversations" / name, "w", encoding="utf-8") as f:
+    out_path = DATA_DIR / "conversations" / name
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
         for r in found:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     print(f"Wrote {len(found)}/{len(stories)} conversations to data/conversations/{name}")

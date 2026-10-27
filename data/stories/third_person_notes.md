@@ -3,8 +3,8 @@
 Files moved after the run (paths below are as originally written): data/3_person_stories.jsonl is now
 data/stories/stories_third_person.jsonl, data/qa_report.json is now data/stories/third_person_qa_report.json,
 and this file was data/NOTES.md. Conversations are produced with
-`modal run --detach scripts/run_conversations.py --third-person` into
-data/conversations/conversations_third_person.jsonl.
+`modal run --detach scripts/run_conversations.py --model <model> --third-person` into
+data/conversations/<model>/conversations_third_person.jsonl.
 
 Status: COMPLETE. All 500 stories rewritten, assembled and validated; data/3_person_stories.jsonl written
 (250 NTA / 250 YTA); V1-V8 pass for all 500 with no failures and no V7 warnings (final_status in
