@@ -32,7 +32,7 @@ def record_key(record):
 
 @app.function(
     image=image,
-    gpu="B200",
+    gpu="H200",
     timeout=24 * 60 * 60,
     volumes={
         "/root/.cache/huggingface": hf_cache,
