@@ -1,0 +1,10 @@
+model: allenai/Olmo-3.1-32B-Think
+max_model_len: 65536
+chat_template_kwargs: {}
+thinking:
+  start: "<think>"
+  end: "</think>"
+sampling:
+  temperature: 0.6
+  top_p: 0.95
+  max_tokens: 32768
