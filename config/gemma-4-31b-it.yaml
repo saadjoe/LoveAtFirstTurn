@@ -5,6 +5,7 @@ chat_template_kwargs:
 thinking:
   start: "<|channel>thought"
   end: "<channel|>"
+# Sampling parameters from https://huggingface.co/google/gemma-4-31B-it
 sampling:
   temperature: 1.0
   top_p: 0.95

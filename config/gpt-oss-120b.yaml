@@ -1,6 +1,7 @@
 model: openai/gpt-oss-120b
 max_model_len: 131072
 reasoning_effort: high
+# Sampling parameters from https://github.com/openai/gpt-oss
 sampling:
   temperature: 1.0
   top_p: 1.0

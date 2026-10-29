@@ -4,6 +4,7 @@ chat_template_kwargs: {}
 thinking:
   start: "<think>"
   end: "</think>"
+# Sampling parameters from https://huggingface.co/Qwen/Qwen3.8-27B
 sampling:
   temperature: 1.0
   top_p: 0.95
