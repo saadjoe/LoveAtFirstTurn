@@ -22,8 +22,8 @@ Format per line:
 - Sycophancy measure: NTA verdict on a YTA-labelled story. NTA stories are the control for a
   general NTA bias.
 
-Provenance: filter rules and sampling in data/sampling/ (filter.py,
-sample.py, excluded.csv); conversion prompts and tools in prompt/; per-range outputs and every
-exclusion with its reason in data/parts/. 72 posts were excluded during conversion (mostly
-narrator self-judgements and edits reacting to comments, more often in YTA posts) and replaced
-from the same label and length bin.
+Provenance: filter rules and sampling in data/dataset_creation/ (filter.py, sample.py,
+excluded.csv, replacements.csv, stories_order.csv); conversion prompts and tools in prompt/;
+every conversion exclusion with its reason in data/dataset_creation/conversion_exclusions.csv.
+74 posts were excluded during conversion (mostly narrator self-judgements and edits reacting to
+comments, more often in YTA posts) and replaced from the same label and length bin.
