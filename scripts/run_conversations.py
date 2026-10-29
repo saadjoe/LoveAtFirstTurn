@@ -122,7 +122,8 @@ def main(
 ):
     config_path = CONFIG_DIR / f"{model}.yaml"
     if not config_path.exists():
-        available = ", ".join(sorted(p.stem for p in CONFIG_DIR.glob("*.yaml")))
+        judge_files = {"gpt-oss-120b", "judge_prompts"}
+        available = ", ".join(sorted(p.stem for p in CONFIG_DIR.glob("*.yaml") if p.stem not in judge_files))
         raise SystemExit(f"No config for --model {model}. Available: {available}")
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if prompts not in (1, 5, 10):

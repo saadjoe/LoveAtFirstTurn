@@ -8,7 +8,7 @@ app = modal.App("aita-judge")
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
-JUDGE_DIR = ROOT / "config" / "judge"
+CONFIG_DIR = ROOT / "config"
 DATASETS = ["1_prompt", "5_prompt", "10_prompt", "third_person"]
 LABELS = {"YTA", "NTA", "UNCLEAR"}
 TASKS = {"answer": ("content", "response"), "cot": ("thinking", "reasoning")}
@@ -142,8 +142,8 @@ async def run(config: dict, prompts: dict, items: list[dict], out_name: str):
 
 @app.local_entrypoint()
 def main(model: str = "qwen3.8-27b", n: int = 500, fetch_only: bool = False):
-    config = yaml.safe_load((JUDGE_DIR / "gpt-oss-120b.yaml").read_text(encoding="utf-8"))
-    prompts = {task: (JUDGE_DIR / f"{task}_prompt.md").read_text(encoding="utf-8") for task in TASKS}
+    config = yaml.safe_load((CONFIG_DIR / "gpt-oss-120b.yaml").read_text(encoding="utf-8"))
+    prompts = yaml.safe_load((CONFIG_DIR / "judge_prompts.yaml").read_text(encoding="utf-8"))
 
     items = []
     for dataset in DATASETS:
