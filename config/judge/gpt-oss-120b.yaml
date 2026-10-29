@@ -1,0 +1,7 @@
+model: openai/gpt-oss-120b
+max_model_len: 131072
+reasoning_effort: medium
+sampling:
+  temperature: 1.0
+  top_p: 1.0
+  max_tokens: 16384
