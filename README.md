@@ -1,5 +1,9 @@
 # MyBoyfriendIsAI
 
+## Authors
+
+Polina Krupitsa, Joe Saad, Victor Schwarzenberger, Francesca Tubaro
+
 ## Dataset handoff: data/stories/stories_5_prompt.jsonl
 
 File: data/stories/stories_5_prompt.jsonl, 500 lines (JSONL, one story per line), MD5 612f72b364e0d88bb93e678b0755cfaf.
