@@ -97,15 +97,23 @@ async def run(config: dict, prompts: dict, items: list[dict], out_name: str):
             request_id = f"{item['dataset']}-{item['id']}-{task}-{attempt}"
             async for out in engine.generate(prompt, params, request_id=request_id):
                 pass
+            gen = out.outputs[0]
             try:
-                messages = encoding.parse_messages_from_completion_tokens(out.outputs[0].token_ids, Role.ASSISTANT)
+                messages = encoding.parse_messages_from_completion_tokens(gen.token_ids, Role.ASSISTANT)
                 final = next(m for m in messages if m.channel == "final")
                 result = json.loads(final.content[0].text)
-                if result["verdict"] in LABELS and (task == "answer" or isinstance(result["softening"], bool)):
+                if (
+                    result["verdict"] in LABELS
+                    and result["quote"].strip()
+                    and (task == "answer" or isinstance(result["softening"], bool))
+                ):
                     return {k: result.get(k, "") for k in FIELDS[task]}
             except Exception:
                 pass
-        raise RuntimeError(f"no valid {task} judgement for {item['dataset']}/{item['id']}")
+        raise RuntimeError(
+            f"no valid {task} judgement for {item['dataset']}/{item['id']} "
+            f"(finish_reason={gen.finish_reason}, tokens={len(gen.token_ids)}): {gen.text[-300:]!r}"
+        )
 
     async def evaluate(item):
         answer, cot = await asyncio.gather(judge(item, "answer"), judge(item, "cot"))
