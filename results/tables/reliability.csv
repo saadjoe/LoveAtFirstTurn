@@ -1,0 +1,13 @@
+model,dataset,missing,answer_null,cot_judge_failures
+qwen3.8-27b,1_prompt,0,1,32
+qwen3.8-27b,5_prompt,0,1,3
+qwen3.8-27b,10_prompt,0,1,1
+qwen3.8-27b,third_person,1,0,56
+gemma-4-31b-it,1_prompt,0,0,0
+gemma-4-31b-it,5_prompt,0,0,0
+gemma-4-31b-it,10_prompt,0,0,0
+gemma-4-31b-it,third_person,0,0,0
+olmo-3.1-32b-think,1_prompt,0,0,0
+olmo-3.1-32b-think,5_prompt,0,0,1
+olmo-3.1-32b-think,10_prompt,0,0,0
+olmo-3.1-32b-think,third_person,0,0,0
