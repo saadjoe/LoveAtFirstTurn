@@ -48,7 +48,37 @@ we dropped 74 more posts, mostly ones where the author judges themselves or edit
 and replaced each with a post of the same label and length bin (`conversion_exclusions.csv`). The
 third-person run is documented in `third_person_notes.md` and `third_person_qa_report.json`. The scripts in
 `data/dataset_creation/` and `data/prompt/` still have the sandbox paths they ran with, so they don't run
-from the repo as they are.
+from the repo as they are. To rebuild the stories you need `AITA-YTA.csv` and `AITA-NTA-OG.csv` from the
+ELEPHANT data linked above. We don't include them because we didn't change them.
+
+### Conversations and judgements
+
+Each line of `data/conversations/<model>/conversations_<dataset>.jsonl` is one story:
+`{"id", "messages"}`. User messages have `role` and `content`. Assistant messages have `role`,
+`thinking` (the reasoning), `content` (the final answer), `finish_reason` and `tokens` (number of
+generated tokens).
+
+Each line of `data/judgements/<model>/judgements_<dataset>.jsonl` is one story:
+`{"dataset", "id", "label", "answer", "cot"}`. `answer` is the judgement of the final answer,
+`{"verdict", "quote"}`, and `cot` the judgement of the reasoning, `{"verdict", "quote", "softening",
+"softening_quote"}`. `verdict` is YTA, NTA or UNCLEAR and `quote` is the judge's evidence. Either one is
+`null` when the model's answer or reasoning was empty.
+
+### Results
+
+The tables in `results/tables/` have one row per model and dataset:
+
+- `sycophancy.csv`: for the answer and the reasoning (`part`), the share of YTA stories judged NTA with a
+  95% Wilson interval (`ci_low`, `ci_high`), and `nta_agreement`, the share of NTA stories judged NTA.
+- `comparisons.csv`: the change in sycophancy from `1_prompt` to each other dataset on the same stories
+  (`diff`), with a bootstrap interval and an exact McNemar `p`.
+- `cot_vs_answer.csv`: how often the two labels agree, the difference in sycophancy between answer and
+  reasoning on YTA stories (`diff`, interval, `p`), the number of stories where the reasoning says YTA but
+  the answer NTA and the other way round, a sign test on those two counts (`p_switch`), and the share of
+  reasoning with `softening`.
+- `reliability.csv`: missing judgements, empty answers and excluded judge failures.
+
+`results/figures/sycophancy.png` plots the sycophancy table and `switches.png` the two switch counts.
 
 ## Repository
 
@@ -61,16 +91,21 @@ data/dataset_creation/  filtering, sampling, exclusions, third-person run notes
 data/prompt/            conversion prompts and tools for 5_prompt, 10_prompt and third_person
 results/                tables/*.csv and figures/*.png
 scripts/                run_conversations.py, run_judge.py, analyze_judgements.py
+requirements.txt        Python packages needed locally
 ```
 
 ## Reproduce
 
-You need Python 3.12+ and a [Modal](https://modal.com) account with H200 access.
+You need Python 3.12 to 3.14 and a [Modal](https://modal.com) account with H200 access.
 
 ```bash
-pip install modal pyyaml pandas matplotlib
+pip install -r requirements.txt
 modal setup
 ```
+
+vLLM and the other GPU packages are installed inside the Modal image that the scripts define. The models
+are downloaded from Hugging Face on their first run and cached on the Modal volume `huggingface-cache`, so
+there is nothing to download by hand.
 
 Generate the conversations with one command per model and dataset. `--model` is the name of a config
 file and `--dataset` is one of `1_prompt`, `5_prompt`, `10_prompt` or `third_person`; both are required:

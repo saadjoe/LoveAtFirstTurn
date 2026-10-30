@@ -1,0 +1,5 @@
+modal==1.6.1
+PyYAML==6.0.3
+pandas==3.1.0
+numpy==2.5.4
+matplotlib==3.11.2
