@@ -141,7 +141,7 @@ async def run(config: dict, prompts: dict, items: list[dict], out_name: str):
 
 
 @app.local_entrypoint()
-def main(model: str = "qwen3.8-27b", n: int = 500, fetch_only: bool = False):
+def main(model: str, n: int | None = None, fetch_only: bool = False):
     config = yaml.safe_load((CONFIG_DIR / "gpt-oss-120b.yaml").read_text(encoding="utf-8"))
     prompts = yaml.safe_load((CONFIG_DIR / "judge_prompts.yaml").read_text(encoding="utf-8"))
 

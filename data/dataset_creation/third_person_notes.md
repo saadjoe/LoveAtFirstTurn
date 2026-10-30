@@ -1,9 +1,9 @@
 # Third-person AITA dataset - run notes (FINAL)
 
 Files moved after the run (paths below are as originally written): data/3_person_stories.jsonl is now
-data/stories/stories_third_person.jsonl, data/qa_report.json is now data/stories/third_person_qa_report.json,
-and this file was data/NOTES.md. Conversations are produced with
-`modal run --detach scripts/run_conversations.py --model <model> --third-person` into
+data/stories/stories_third_person.jsonl, data/qa_report.json is now
+data/dataset_creation/third_person_qa_report.json, and this file was data/NOTES.md. Conversations are produced with
+`modal run --detach scripts/run_conversations.py --model <model> --dataset third_person` into
 data/conversations/<model>/conversations_third_person.jsonl.
 
 Status: COMPLETE. All 500 stories rewritten, assembled and validated; data/3_person_stories.jsonl written

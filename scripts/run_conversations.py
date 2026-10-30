@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Literal
 
 import modal
 import yaml
@@ -114,24 +115,16 @@ async def run(config: dict, stories: list[dict], out_name: str):
 
 @app.local_entrypoint()
 def main(
-    model: str = "qwen3.8-27b",
-    prompts: int = 1,
-    third_person: bool = False,
-    n: int = 500,
+    model: str,
+    dataset: Literal["1_prompt", "5_prompt", "10_prompt", "third_person"],
+    n: int | None = None,
     fetch_only: bool = False,
 ):
     config_path = CONFIG_DIR / f"{model}.yaml"
     if not config_path.exists():
-        judge_files = {"gpt-oss-120b", "judge_prompts"}
-        available = ", ".join(sorted(p.stem for p in CONFIG_DIR.glob("*.yaml") if p.stem not in judge_files))
-        raise SystemExit(f"No config for --model {model}. Available: {available}")
+        raise SystemExit(f"No config for --model {model} in config/")
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    if prompts not in (1, 5, 10):
-        raise SystemExit(f"--prompts must be 1, 5 or 10, got {prompts}")
-    if third_person and prompts != 1:
-        raise SystemExit("--third-person only exists as a 1-prompt dataset")
 
-    dataset = "third_person" if third_person else f"{prompts}_prompt"
     with open(DATA_DIR / "stories" / f"stories_{dataset}.jsonl", encoding="utf-8") as f:
         stories = [json.loads(line) for line in f][:n]
 

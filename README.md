@@ -73,19 +73,19 @@ modal setup
 ```
 
 Generate the conversations with one command per model and dataset. `--model` is the name of a config
-file:
+file and `--dataset` is one of `1_prompt`, `5_prompt`, `10_prompt` or `third_person`; both are required:
 
 ```bash
-modal run scripts/run_conversations.py --model qwen3.8-27b --prompts 1
-modal run scripts/run_conversations.py --model qwen3.8-27b --prompts 5
-modal run scripts/run_conversations.py --model qwen3.8-27b --prompts 10
-modal run scripts/run_conversations.py --model qwen3.8-27b --third-person
+modal run scripts/run_conversations.py --model qwen3.8-27b --dataset 1_prompt
+modal run scripts/run_conversations.py --model qwen3.8-27b --dataset 5_prompt
+modal run scripts/run_conversations.py --model qwen3.8-27b --dataset 10_prompt
+modal run scripts/run_conversations.py --model qwen3.8-27b --dataset third_person
 ```
 
 To keep a run going after you close the terminal, put `--detach` directly after `modal run`:
 
 ```bash
-modal run --detach scripts/run_conversations.py --model qwen3.8-27b --prompts 1
+modal run --detach scripts/run_conversations.py --model qwen3.8-27b --dataset 1_prompt
 ```
 
 Then judge all four datasets of a model and run the analysis:
@@ -97,4 +97,5 @@ python scripts/analyze_judgements.py
 
 Results are saved on the Modal volume `aita-results` and copied into `data/`. A run picks up where it
 stopped. `--fetch-only` only downloads what is already saved, which you need after a detached run whose
-terminal you closed. `--n` limits the number of stories for a test run.
+terminal you closed. `--n` is optional and limits the number of stories for a test run; without it the
+full dataset is used.
