@@ -1,3 +1,10 @@
+"""Compute the tables and figures in results/ from the judgements in data/judgements/.
+
+Reasoning labels that are UNCLEAR and quote the very start of the reasoning are judge failures and are
+left out; their counts are in results/tables/reliability.csv. The bootstrap uses a fixed seed, so a rerun
+reproduces results/ exactly.
+"""
+
 import json
 import math
 from pathlib import Path
@@ -35,7 +42,6 @@ def load():
             failures = 0
             for r in judged:
                 cot = r["cot"]
-                # The judge sometimes misreads the reasoning as its own task and quotes its first line.
                 quote = cot["quote"].strip().strip("\"'")[:30] if cot else ""
                 failed = cot is not None and cot["verdict"] == "UNCLEAR" and thinking[r["id"]].lstrip().startswith(quote)
                 failures += failed
@@ -64,6 +70,7 @@ def load():
 
 
 def wilson(k, n, z=1.96):
+    """95% Wilson score interval for k out of n."""
     p = k / n
     centre = (p + z * z / (2 * n)) / (1 + z * z / n)
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
@@ -71,6 +78,7 @@ def wilson(k, n, z=1.96):
 
 
 def binom_p(k, n):
+    """Exact two-sided binomial test of k out of n against p = 0.5 (McNemar and sign test)."""
     if n == 0:
         return 1.0
     k = min(k, n - k)

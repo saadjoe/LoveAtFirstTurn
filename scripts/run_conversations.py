@@ -1,3 +1,11 @@
+"""Generate the conversations of one model for one dataset on Modal.
+
+The user turns of each story are sent one at a time with vLLM, and the model's replies stay in the
+history. Reasoning and final answer of every reply are saved separately. Results are written to the
+Modal volume `aita-results` and copied to data/conversations/<model>/conversations_<dataset>.jsonl.
+A rerun skips stories that are already saved.
+"""
+
 import json
 from pathlib import Path
 from typing import Literal
@@ -23,6 +31,7 @@ vllm_cache = modal.Volume.from_name("vllm-cache", create_if_missing=True)
 results = modal.Volume.from_name("aita-results", create_if_missing=True)
 
 
+# Saved conversations are matched on id and user turns
 def key(story_id, user_turns):
     return story_id, tuple(user_turns)
 
@@ -84,6 +93,7 @@ async def run(config: dict, stories: list[dict], out_name: str):
                 pass
             gen = out.outputs[0]
             thinking, sep, answer = gen.text.partition(think_end)
+            # Without the end marker the model never finished thinking
             if not sep:
                 answer = ""
             thinking = thinking.replace(think_start, "").strip()
@@ -106,10 +116,11 @@ async def run(config: dict, stories: list[dict], out_name: str):
                 r = await finished
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 f.flush()
-                if i % 10 == 0 or i == len(todo):
+                if i % 10 == 0:
                     await results.commit.aio()
                 print(f"{i}/{len(todo)} done: {r['id']}")
     finally:
+        await results.commit.aio()
         engine.shutdown()
 
 

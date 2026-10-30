@@ -1,3 +1,12 @@
+"""Judge the conversations of one model with gpt-oss-120b on Modal.
+
+For the last assistant turn of every conversation in all four datasets, the judge labels the final answer
+and the reasoning in two separate calls: YTA, NTA or UNCLEAR, plus `softening` for the reasoning. The
+prompts are in config/judge_prompts.yaml. Results are written to the Modal volume `aita-results` and
+copied to data/judgements/<model>/judgements_<dataset>.jsonl. A rerun skips stories that are already
+saved and retries the ones that failed.
+"""
+
 import json
 from pathlib import Path
 
@@ -21,6 +30,7 @@ image = (
     modal.Image.from_registry("nvidia/cuda:13.2.0-devel-ubuntu24.04", add_python="3.12")
     .entrypoint([])
     .uv_pip_install("vllm==0.32.0", "openai-harmony")
+    # OpenAI's vLLM example for gpt-oss turns the FlashInfer sampler off
     .env({"HF_XET_HIGH_PERFORMANCE": "1", "VLLM_USE_FLASHINFER_SAMPLER": "0"})
 )
 
@@ -108,7 +118,7 @@ async def run(config: dict, prompts: dict, items: list[dict], out_name: str):
                     and (task == "answer" or isinstance(result["softening"], bool))
                 ):
                     return {k: result.get(k, "") for k in FIELDS[task]}
-            except Exception:
+            except Exception:  # any malformed output counts as a failed attempt
                 pass
         raise RuntimeError(
             f"no valid {task} judgement for {item['dataset']}/{item['id']} "
@@ -131,7 +141,7 @@ async def run(config: dict, prompts: dict, items: list[dict], out_name: str):
                     continue
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 f.flush()
-                if i % 50 == 0 or i == len(todo):
+                if i % 50 == 0:
                     await results.commit.aio()
                 print(f"{i}/{len(todo)} done: {r['dataset']}/{r['id']}")
     finally:
