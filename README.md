@@ -1,10 +1,12 @@
 # MyBoyfriendIsAI
 
 We test whether open-weight reasoning models tell users what they want to hear, and whether their
-reasoning trace disagrees with what they finally say. Three models get Reddit "Am I the Asshole" (AITA)
-stories from the [ELEPHANT](https://osf.io/r3dmj/files/4chzv?view_only=37ee66a8020a45c29a38bd704ca61067)
-data. Every story comes in four versions: as one message, split over 5 or 10 messages, or retold in third
-person. An LLM judge then labels the verdict in each final answer and in the reasoning behind it.
+reasoning trace disagrees with what they finally say. Three models,
+[Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B),
+[Gemma 4 31B-it](https://huggingface.co/google/gemma-4-31B-it) and
+[Olmo 3.1 32B Think](https://huggingface.co/allenai/Olmo-3.1-32B-Think), get Reddit "Am I the Asshole"
+(AITA) stories from the [ELEPHANT](https://arxiv.org/abs/2505.13995) benchmark. Every story comes in four
+versions: as one message, split over 5 or 10 messages, or retold in third person. An LLM judge then labels the verdict in each final answer and in the reasoning behind it.
 
 ## Authors
 
@@ -15,8 +17,8 @@ Polina Krupitsa, Joe Saad, Victor Schwarzenberger, Francesca Tubaro
 1. `scripts/run_conversations.py` lets every model answer every story on Modal (H200, vLLM). For the
    multi-turn stories we send one user message at a time and keep the model's real replies in the
    history. Reasoning and final answer are saved separately.
-2. `scripts/run_judge.py` has gpt-oss-120b read the last assistant turn of each conversation in two
-   separate calls. The first call only sees the final answer and labels it YTA, NTA or UNCLEAR. The second
+2. `scripts/run_judge.py` has [gpt-oss-120b](https://huggingface.co/openai/gpt-oss-120b) read the last
+   assistant turn of each conversation in two separate calls. The first call only sees the final answer and labels it YTA, NTA or UNCLEAR. The second
    only sees the reasoning, labels it the same way and sets `softening`, which says whether the reasoning
    softens or changes the verdict to please the user or to avoid upsetting them.
 3. `scripts/analyze_judgements.py` writes the tables and figures in `results/`. It leaves out reasoning
@@ -46,10 +48,10 @@ dropped 1,794 posts, each listed with its reason in `excluded.csv`. The sample i
 versions, and the exact prompts and tools are in `data/prompt/`. During that conversion
 we dropped 74 more posts, mostly ones where the author judges themselves or edits that react to comments,
 and replaced each with a post of the same label and length bin (`conversion_exclusions.csv`). The
-third-person run is documented in `third_person_notes.md` and `third_person_qa_report.json`. The scripts in
-`data/dataset_creation/` and `data/prompt/` still have the sandbox paths they ran with, so they don't run
-from the repo as they are. To rebuild the stories you need `AITA-YTA.csv` and `AITA-NTA-OG.csv` from the
-ELEPHANT data linked above. We don't include them because we didn't change them.
+third-person run is documented in `third_person_notes.md` and `third_person_qa_report.json`. To 
+rebuild the stories you need `AITA-YTA.csv` and `AITA-NTA-OG.csv` from the
+[ELEPHANT data on OSF](https://osf.io/r3dmj/files/4chzv?view_only=37ee66a8020a45c29a38bd704ca61067).
+We don't include them because we didn't change them.
 
 ### Conversations and judgements
 
@@ -96,10 +98,18 @@ requirements.txt        Python packages needed locally
 
 ## Reproduce
 
-You need Python 3.12 to 3.14 and a [Modal](https://modal.com) account with H200 access.
+You need Python 3.12 to 3.14:
 
 ```bash
 pip install -r requirements.txt
+```
+
+All conversations and judgements are already in the repo, so `python scripts/analyze_judgements.py`
+reproduces every table and figure in `results/` without Modal.
+
+To regenerate the data itself you also need a [Modal](https://modal.com) account with H200 access:
+
+```bash
 modal setup
 ```
 
@@ -107,8 +117,9 @@ vLLM and the other GPU packages are installed inside the Modal image that the sc
 are downloaded from Hugging Face on their first run and cached on the Modal volume `huggingface-cache`, so
 there is nothing to download by hand.
 
-Generate the conversations with one command per model and dataset. `--model` is the name of a config
-file and `--dataset` is one of `1_prompt`, `5_prompt`, `10_prompt` or `third_person`; both are required:
+Generate the conversations with one command per model and dataset. `--model` is one of `qwen3.8-27b`,
+`gemma-4-31b-it` or `olmo-3.1-32b-think` (the configs in `config/`) and `--dataset` is one of `1_prompt`,
+`5_prompt`, `10_prompt` or `third_person`; both are required:
 
 ```bash
 modal run scripts/run_conversations.py --model qwen3.8-27b --dataset 1_prompt
