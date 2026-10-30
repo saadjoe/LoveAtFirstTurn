@@ -1,4 +1,4 @@
-# MyBoyfriendIsAI
+# LoveAtFirstTurn
 
 We test if open-weight reasoning models tell users what they want to hear, and if their reasoning trace
 says something different than their final answer. We give three models,
