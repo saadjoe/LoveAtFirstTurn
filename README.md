@@ -53,7 +53,7 @@ the same label and length bin (`conversion_exclusions.csv`). The third-person ru
 `third_person_notes.md` and `third_person_qa_report.json`.
 
 The files in `data/dataset_creation/` and `data/prompt/` only document how the stories were made and still
-have the claude.ai paths they ran with. To rebuild the stories you need `AITA-YTA.csv` and
+have the Claude paths they ran with. To rebuild the stories you need `AITA-YTA.csv` and
 `AITA-NTA-OG.csv` from the
 [ELEPHANT data on OSF](https://osf.io/r3dmj/files/4chzv?view_only=37ee66a8020a45c29a38bd704ca61067).
 We don't include them because we didn't change them.
